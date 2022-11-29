@@ -102,11 +102,17 @@ const App: React.FC = ({}) => {
                 dataset = state.dataset;
               }
 
-              const path = state.dataset
+              console.log("state.dataset", state);
+              let path = state.dataset
                 ? `/datasets/${encodeURIComponent(state.dataset)}${
                     window.location.search
                   }`
                 : `/${window.location.search}`;
+
+              const savedViewSlug = state?.savedViewSlug;
+              if (savedViewSlug) {
+                path = `${path}?view=${encodeURIComponent(savedViewSlug)}`;
+              }
 
               contextRef.current.history.replace(path, {
                 state,

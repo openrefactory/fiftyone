@@ -132,6 +132,7 @@ type Dataset {
   version: String
   viewCls: String
   viewName: String
+  savedViewSlug: String
   defaultSkeleton: KeypointSkeleton
   skeletons: [NamedKeypointSkeleton!]!
   appConfig: DatasetAppConfig
@@ -293,6 +294,7 @@ type Mutation {
     subscription: String!
     session: String
     datasetName: String!
+    savedViewSlug: String
     view: BSONArray
     viewName: String
     form: StateForm
@@ -535,6 +537,7 @@ type ViewResponse {
   view: BSONArray!
   dataset: Dataset!
   viewName: String
+  savedViewSlug: String
 }
 
 scalar date

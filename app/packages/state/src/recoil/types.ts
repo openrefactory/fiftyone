@@ -108,6 +108,7 @@ export namespace State {
     defaultMaskTargets: Targets;
     evaluations: EvaluationRun[];
     savedViews: SavedView[];
+    selectedSavedViewSlug: string;
     frameFields: StrictField[];
     lastLoadedAt: DateTime;
     maskTargets: {
@@ -179,5 +180,7 @@ export namespace State {
     viewCls: string | null;
     viewName: string | null;
     savedViews: SavedView[];
+    selectedSavedViewSlug: string;
+    savedViewSlug: String;
   }
 }

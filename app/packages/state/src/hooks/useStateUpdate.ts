@@ -145,6 +145,12 @@ const useStateUpdate = () => {
 
         if (state.savedViews?.length > 0) {
           dataset.savedViews = state.savedViews;
+          // console.log("state.savedViews", state.savedViews);
+        }
+
+        if (state.selectedSavedViewSlug) {
+          dataset.selectedSavedViewSlug = state.selectedSavedViewSlug;
+          console.log("selectedSavedViewSlug", dataset.selectedSavedViewSlug);
         }
 
         set(datasetAtom, dataset);

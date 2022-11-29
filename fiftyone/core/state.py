@@ -39,6 +39,7 @@ class StateDescription(etas.Serializable):
         view (None): the current :class:`fiftyone.core.view.DatasetView`
         view_name (None): the name of the view if the current view is a
         saved view
+        saved_view_slug (None): the slug of a saved view
     """
 
     def __init__(
@@ -49,6 +50,7 @@ class StateDescription(etas.Serializable):
         selected_labels=None,
         view=None,
         view_name=None,
+        saved_view_slug=None,
     ):
         self.config = config or fo.app_config.copy()
         self.dataset = dataset
@@ -56,6 +58,7 @@ class StateDescription(etas.Serializable):
         self.selected_labels = selected_labels or []
         self.view = view
         self.view_name = view_name
+        self.saved_view_slug = saved_view_slug
 
     def serialize(self, reflective=False):
         with fou.disable_progress_bars():
@@ -121,6 +124,7 @@ class StateDescription(etas.Serializable):
             view = None
 
         view_name = d.get("view_name", None)
+        saved_view_slug = d.get("saved_view_slug", None)
 
         group_slice = d.get("group_slice", None)
         if group_slice:
@@ -143,6 +147,7 @@ class StateDescription(etas.Serializable):
             selected_labels=d.get("selected_labels", []),
             view=view,
             view_name=view_name,
+            saved_view_slug=saved_view_slug,
         )
 
 

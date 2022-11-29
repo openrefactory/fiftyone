@@ -39,6 +39,7 @@ class ViewResponse:
     view: BSONArray
     dataset: Dataset
     view_name: t.Optional[str] = None
+    saved_view_slug: t.Optional[str] = None
 
 
 @gql.input
@@ -144,6 +145,7 @@ class Mutation:
         subscription: str,
         session: t.Optional[str],
         dataset_name: str,
+        saved_view_slug: t.Optional[str],
         view: t.Optional[BSONArray],
         view_name: t.Optional[str],
         form: t.Optional[StateForm],
@@ -152,6 +154,9 @@ class Mutation:
         state = get_state()
         state.selected = []
         state.selected_labels = []
+        state.saved_view_slug = saved_view_slug
+
+        print("SLUG", saved_view_slug)
 
         if view_name is not None and state.dataset.has_view(view_name):
             # Load a saved view by name

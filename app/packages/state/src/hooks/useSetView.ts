@@ -55,6 +55,7 @@ const useSetView = (
               subscription,
               session,
               view: value,
+              savedViewSlug: viewUrlName || "",
               datasetName: dataset.name,
               form: patch
                 ? {
@@ -81,6 +82,7 @@ const useSetView = (
                 selected: [],
                 selectedLabels: [],
                 savedViews,
+                selectedSavedViewSlug: viewUrlName || "",
               };
               router.history.location.state.state = newState;
 
@@ -104,6 +106,7 @@ const useSetView = (
                     selectedLabels: [],
                     viewName,
                     savedViews,
+                    selectedSavedViewSlug: viewUrlName || "",
                   },
                 });
               }

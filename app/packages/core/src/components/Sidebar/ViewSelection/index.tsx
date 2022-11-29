@@ -62,6 +62,8 @@ export default function ViewSelection(props: Props) {
   const [savedViewParam, setSavedViewParam] = fos.useQueryState("view");
   const setEditView = useSetRecoilState(viewDialogContent);
   const setView = fos.useSetView();
+  const loadedView = useRecoilValue<fos.State.Stage[]>(fos.view);
+  const isEmptyView = !loadedView?.length;
   const [viewSearch, setViewSearch] = useRecoilState<string>(viewSearchTerm);
 
   const fragments = usePreloadedQuery(DatasetSavedViewsQuery, queryRef);
@@ -93,7 +95,7 @@ export default function ViewSelection(props: Props) {
       filter(
         viewOptions,
         ({ id, label, description, slug }: DatasetViewOption) =>
-          id === "1" ||
+          id === DEFAULT_SELECTED.id ||
           label.toLowerCase().includes(viewSearch) ||
           description?.toLowerCase().includes(viewSearch) ||
           slug?.toLowerCase().includes(viewSearch)
@@ -101,19 +103,17 @@ export default function ViewSelection(props: Props) {
     [viewOptions, viewSearch]
   );
 
-  const loadedView = useRecoilValue<fos.State.Stage[]>(fos.view);
-  const isEmptyView = !loadedView?.length;
   const selectedView = viewOptions[0];
   const [selected, setSelected] = useState<DatasetViewOption | null>(
     selectedView
   );
-  const [isExtendingSavedView, setIsExtendingSavedView] =
-    useState<boolean>(false);
+
+  // const [isExtendingSavedView, setIsExtendingSavedView] = useState<boolean>(
+  //   false
+  // );
 
   useEffect(() => {
-    if (!loadedView?.length && selected?.id !== DEFAULT_SELECTED.id) {
-      setSelected(null);
-    } else if (savedViewParam) {
+    if (savedViewParam) {
       const potentialView = viewOptions.filter(
         (v) => v.slug === savedViewParam
       )?.[0];
@@ -123,7 +123,20 @@ export default function ViewSelection(props: Props) {
         setSelected(null);
       }
     }
-  }, [viewOptions, savedViewParam, loadedView]);
+    // if (!loadedView?.length && selected?.id !== DEFAULT_SELECTED.id) {
+    //   setSelected(null);
+    // } else if (savedViewParam) {
+    //   const potentialView = viewOptions.filter(
+    //     (v) => v.slug === savedViewParam
+    //   )?.[0];
+    //   if (potentialView) {
+    //     setSelected(potentialView);
+    //   } else {
+    //     setSelected(null);
+    //   }
+    // }
+    // }, [viewOptions, savedViewParam, loadedView]);
+  }, [viewOptions, savedViewParam]);
 
   useEffect(() => {
     if (selected) {
