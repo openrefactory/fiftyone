@@ -24,6 +24,8 @@ import {
   sidebarMode,
   groupStatistics,
   theme,
+  colorscaleAtom,
+  configAtom,
 } from "../recoil";
 import { useColorScheme } from "@mui/material";
 
@@ -46,7 +48,7 @@ const useStateUpdate = () => {
 
   return useRecoilTransaction_UNSTABLE(
     (t) => (resolve: StateResolver) => {
-      const { config, dataset, state } =
+      const { colorscale, config, dataset, state } =
         resolve instanceof Function ? resolve(t) : resolve;
 
       const { get, reset, set } = t;
@@ -62,6 +64,8 @@ const useStateUpdate = () => {
         }
       }
 
+      colorscale !== undefined && set(colorscaleAtom, colorscale);
+      config !== undefined && set(configAtom, config);
       state?.viewCls !== undefined && set(viewAtoms.viewCls, state.viewCls);
 
       state?.selected && set(selectedSamples, new Set(state.selected));
