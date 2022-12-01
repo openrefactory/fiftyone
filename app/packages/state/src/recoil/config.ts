@@ -1,9 +1,10 @@
 import { config as configGraphQLQuery, configQuery } from "@fiftyone/relay";
 import { RGB } from "@fiftyone/utilities";
-import { selector } from "recoil";
+import { atom, selector } from "recoil";
 import { graphQLSelector } from "recoil-relay";
 import { VariablesOf } from "relay-runtime";
 import { RelayEnvironmentKey } from "./relay";
+import { State } from "./types";
 
 export type ResponseFrom<TResponse extends { response: unknown }> =
   TResponse["response"];
@@ -23,14 +24,29 @@ const configData = graphQLSelector<
   },
 });
 
-export const colorscale = selector<RGB[]>({
-  key: "colorscale",
-  get: ({ get }) => get(configData).colorscale as RGB[],
+export const colorscaleAtom = atom<RGB[]>({
+  key: "colorscaleAtom",
+  default: null,
 });
 
-export const config = selector({
+export const colorscale = selector<RGB[]>({
+  key: "colorscale",
+  get: ({ get }) =>
+    get(colorscaleAtom) || (get(configData).colorscale as RGB[]),
+});
+
+export const configAtom = atom<State.Config>({
+  key: "configAtom",
+  default: null,
+});
+
+export const config = selector<State.Config>({
   key: "config",
-  get: ({ get }) => get(configData).config,
+  get: ({ get }) => {
+    return (
+      get(configAtom) || (get(configData).config as unknown as State.Config)
+    );
+  },
 });
 
 export const colorPool = selector({
