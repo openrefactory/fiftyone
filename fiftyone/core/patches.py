@@ -871,6 +871,7 @@ def _merge_matched_labels(dataset, src_collection, eval_key, field):
     eval_field = list_field + "." + eval_id
 
     src_collection._aggregate(
+        detach_virtual=True,
         post_pipeline=[
             {"$project": {list_field: True}},
             {"$unwind": "$" + list_field},
@@ -906,12 +907,13 @@ def _merge_matched_labels(dataset, src_collection, eval_key, field):
                     "whenNotMatched": "discard",
                 }
             },
-        ]
+        ],
     )
 
 
 def _write_samples(dataset, src_collection):
     src_collection._aggregate(
+        detach_virtual=True,
         detach_frames=True,
         detach_groups=True,
         post_pipeline=[{"$out": dataset._sample_collection_name}],
@@ -920,6 +922,7 @@ def _write_samples(dataset, src_collection):
 
 def _add_samples(dataset, src_collection):
     src_collection._aggregate(
+        detach_virtual=True,
         detach_frames=True,
         detach_groups=True,
         post_pipeline=[

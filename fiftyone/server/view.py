@@ -219,6 +219,7 @@ def _make_filter_stages(
     cache = {}
 
     stages = []
+    virtual_fields = set()
     cleanup = set()
     filtered_labels = set()
     for path in sorted(filters):
@@ -226,28 +227,30 @@ def _make_filter_stages(
         if path == "tags" or path.startswith("_"):
             continue
 
+        field = view.get_field(path)
+        if field is not None and field.is_virtual:
+            virtual_fields.add(path)
+
         frames = path.startswith(view._FRAMES_PREFIX)
         keys = path.split(".")
         if frames:
-            field = frame_field_schema[keys[1]]
+            root = frame_field_schema[keys[1]]
             keys = keys[2:]
-            prefix = "frames."
+            prefix = view._FRAMES_PREFIX
         else:
-            field = field_schema[keys[0]]
+            root = field_schema[keys[0]]
             keys = keys[1:]
             prefix = ""
 
-        if _is_label(field):
+        if _is_label(root):
             keypoints = issubclass(
-                field.document_type, (fol.Keypoint, fol.Keypoints)
+                root.document_type, (fol.Keypoint, fol.Keypoints)
             )
 
             if keypoints:
                 if path.endswith(".id") or path.endswith(".label"):
                     keypoints = False
 
-            parent = field
-            field = view.get_field(path)
             key = field.db_field if field.db_field else field.name
             view_field = F(key)
             expr = (
@@ -272,13 +275,13 @@ def _make_filter_stages(
 
                 if keypoints:
                     stage = fosg.FilterKeypoints(
-                        prefix + parent.name,
+                        prefix + root.name,
                         _new_field=new_field,
                         **expr,
                     )
                 else:
                     stage = fosg.FilterLabels(
-                        cache.get(prefix + parent.name, prefix + parent.name),
+                        cache.get(prefix + root.name, prefix + root.name),
                         expr,
                         only_matches=only_matches,
                         _new_field=new_field,
@@ -287,7 +290,7 @@ def _make_filter_stages(
                 stages.append(stage)
                 filtered_labels.add(path)
                 if new_field:
-                    cache[prefix + parent.name] = new_field
+                    cache[prefix + root.name] = new_field
                     cleanup.add(new_field)
         else:
             expr = _make_expression(view, path, args)
@@ -325,6 +328,9 @@ def _make_filter_stages(
             )
 
         stages.append(fosg.Match(F.any(match_exprs)))
+
+    if virtual_fields:
+        stages.insert(0, fosg.Materialize(fields=virtual_fields))
 
     return stages, cleanup, filtered_labels
 

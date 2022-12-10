@@ -593,7 +593,7 @@ def _write_support_clips(
 
     pipeline.append({"$out": dataset._sample_collection_name})
 
-    src_collection._aggregate(post_pipeline=pipeline)
+    src_collection._aggregate(detach_virtual=True, post_pipeline=pipeline)
 
 
 def _write_temporal_detection_clips(
@@ -652,7 +652,7 @@ def _write_temporal_detection_clips(
         ]
     )
 
-    src_collection._aggregate(post_pipeline=pipeline)
+    src_collection._aggregate(detach_virtual=True, post_pipeline=pipeline)
 
 
 def _write_trajectories(dataset, src_collection, field, other_fields=None):
@@ -697,6 +697,7 @@ def _write_trajectories(dataset, src_collection, field, other_fields=None):
             project.update({f: True for f in other_fields})
 
         src_collection._aggregate(
+            detach_virtual=True,
             post_pipeline=[
                 {"$project": project},
                 {"$unwind": "$" + _tmp_field},
@@ -713,7 +714,7 @@ def _write_trajectories(dataset, src_collection, field, other_fields=None):
                 },
                 {"$unset": _tmp_field},
                 {"$out": dataset._sample_collection_name},
-            ]
+            ],
         )
     finally:
         cleanup_op = {"$unset": {_tmp_field: ""}}
@@ -775,12 +776,13 @@ def _write_manual_clips(dataset, src_collection, clips, other_fields=None):
             project.update({f: True for f in other_fields})
 
         src_collection._aggregate(
+            detach_virtual=True,
             post_pipeline=[
                 {"$project": project},
                 {"$unwind": "$support"},
                 {"$set": {"_rand": {"$rand": {}}}},
                 {"$out": dataset._sample_collection_name},
-            ]
+            ],
         )
     finally:
         cleanup_op = {"$unset": {_tmp_field: ""}}

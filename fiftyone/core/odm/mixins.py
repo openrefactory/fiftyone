@@ -149,7 +149,11 @@ class DatasetMixin(object):
                 )
         elif value is not None:
             if validate:
-                self._fields[field_name].validate(value)
+                field = self._fields[field_name]
+                if field.is_virtual:
+                    raise ValueError("Virtual fields cannot be edited")
+
+                field.validate(value)
 
             if dynamic:
                 self.add_implied_field(
@@ -167,12 +171,15 @@ class DatasetMixin(object):
 
     @classmethod
     def get_field_schema(
-        cls, ftype=None, embedded_doc_type=None, include_private=False
+        cls,
+        ftype=None,
+        embedded_doc_type=None,
+        virtual=None,
+        include_private=False,
+        flat=False,
+        mode=None,
     ):
         """Returns a schema dictionary describing the fields of this document.
-
-        If the document belongs to a dataset, the schema will apply to all
-        documents in the collection.
 
         Args:
             ftype (None): an optional field type or iterable of field types to
@@ -182,28 +189,34 @@ class DatasetMixin(object):
                 iterable of types to which to restrict the returned schema.
                 Must be subclass(es) of
                 :class:`fiftyone.core.odm.BaseEmbeddedDocument`
+            virtual (None): whether to only include virtual (True) or
+                non-virtual (False) fields
             include_private (False): whether to include fields that start with
                 ``_`` in the returned schema
+            flat (False): whether to return a flattened schema where all
+                embedded document fields are included as top-level keys
+            mode (None): whether to apply the ``ftype``, ``embedded_doc_type``
+                and ``virtual`` constraints before and/or after flattening the
+                schema. Only applicable when ``flat`` is True. Supported values
+                are ``("before", "after", "both")``. The default is ``"after"``
 
         Returns:
              a dictionary mapping field names to field types
         """
-        fof.validate_type_constraints(
-            ftype=ftype, embedded_doc_type=embedded_doc_type
+        schema = OrderedDict(
+            (fn, cls._fields[fn])  # pylint: disable=no-member
+            for fn in cls._get_fields_ordered(include_private=include_private)
         )
 
-        schema = OrderedDict()
-        field_names = cls._get_fields_ordered(include_private=include_private)
-        for field_name in field_names:
-            # pylint: disable=no-member
-            field = cls._fields[field_name]
-
-            if fof.matches_type_constraints(
-                field, ftype=ftype, embedded_doc_type=embedded_doc_type
-            ):
-                schema[field_name] = field
-
-        return schema
+        return fof.filter_schema(
+            schema,
+            ftype=ftype,
+            embedded_doc_type=embedded_doc_type,
+            virtual=virtual,
+            include_private=include_private,
+            flat=flat,
+            mode=mode,
+        )
 
     @classmethod
     def merge_field_schema(
@@ -273,6 +286,7 @@ class DatasetMixin(object):
         fields=None,
         description=None,
         info=None,
+        expr=None,
         expand_schema=True,
         recursive=True,
         validate=True,
@@ -298,6 +312,8 @@ class DatasetMixin(object):
                 :class:`fiftyone.core.fields.EmbeddedDocumentField`
             description (None): an optional description
             info (None): an optional info dict
+            expr (None): a :class:`fiftyone.core.expressions.ViewExpression`
+                defining the field's virtual expression
             expand_schema (True): whether to add new fields to the schema
                 (True) or simply validate that the field already exists with a
                 consistent type (False)
@@ -322,6 +338,7 @@ class DatasetMixin(object):
             fields=fields,
             description=description,
             info=info,
+            expr=expr,
             **kwargs,
         )
 
@@ -385,6 +402,7 @@ class DatasetMixin(object):
         fields=None,
         description=None,
         info=None,
+        expr=None,
         **kwargs,
     ):
         field_name = path.rsplit(".", 1)[-1]
@@ -396,6 +414,7 @@ class DatasetMixin(object):
             fields=fields,
             description=description,
             info=info,
+            expr=expr,
             **kwargs,
         )
 
@@ -457,7 +476,7 @@ class DatasetMixin(object):
                 is_frame_field=is_frame_field,
             )
 
-            if fog.is_group_field(field):
+            if field is not None and fog.is_group_field(field):
                 if "." in new_path:
                     raise ValueError(
                         "Invalid group field '%s'; group fields must be "
@@ -466,10 +485,11 @@ class DatasetMixin(object):
 
                 new_group_field = new_path
 
-            if is_dataset and is_root_field:
-                simple_paths.append((path, new_path))
-            else:
-                coll_paths.append((path, new_path))
+            if field is None or not field.is_virtual:
+                if is_dataset and is_root_field:
+                    simple_paths.append((path, new_path))
+                else:
+                    coll_paths.append((path, new_path))
 
             if field is not None:
                 schema_paths.append((path, new_path))
@@ -542,10 +562,11 @@ class DatasetMixin(object):
                 is_frame_field=is_frame_field,
             )
 
-            if is_dataset and is_root_field:
-                simple_paths.append((path, new_path))
-            else:
-                coll_paths.append((path, new_path))
+            if field is None or not field.is_virtual:
+                if is_dataset and is_root_field:
+                    simple_paths.append((path, new_path))
+                else:
+                    coll_paths.append((path, new_path))
 
             if field is not None:
                 schema_paths.append((path, new_path))
@@ -585,6 +606,9 @@ class DatasetMixin(object):
                 raise AttributeError(
                     "%s field '%s' does not exist" % (cls._doc_name(), path)
                 )
+
+            if field is not None and field.is_virtual:
+                raise ValueError("Virtual fields cannot be cleared")
 
             if is_dataset and is_root_field:
                 simple_paths.append(path)
@@ -661,7 +685,9 @@ class DatasetMixin(object):
                 )
                 continue
 
-            del_paths.append(path)
+            if field is None or not field.is_virtual:
+                del_paths.append(path)
+
             del_schema_paths.append(path)
 
         if del_paths:
@@ -1025,7 +1051,7 @@ class DatasetMixin(object):
         field.db_field = new_db_field
 
         if same_root:
-            doc._update_field(cls._dataset, field_name, path, field)
+            doc._update_field(cls._dataset, field_name, new_path, field)
             _update_field_doc(field_docs, field_name, field)
         else:
             doc._undeclare_field(field_name)
