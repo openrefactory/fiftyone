@@ -1122,6 +1122,96 @@ class SampleCollection(object):
             "Subclass must implement get_frame_field_schema()"
         )
 
+    def has_sample_field(self, field_name):
+        """Determines whether the collection has a sample field with the given
+        name.
+
+        Args:
+            field_name: the field name
+
+        Returns:
+            True/False
+        """
+        return field_name in self.get_field_schema()
+
+    def has_frame_field(self, field_name):
+        """Determines whether the collection has a frame-level field with the
+        given name.
+
+        Args:
+            field_name: the field name
+
+        Returns:
+            True/False
+        """
+        if not self._has_frame_fields():
+            return False
+
+        return field_name in self.get_frame_field_schema()
+
+    def get_virtual_field_schema(self, fields=None):
+        """Returns a schema dictionary describing the virtual fields of the
+        samples in the collection.
+
+        Virtual fields are fields that are implicitly populated by expressions
+        rather than being directly stored in the database.
+
+        Args:
+            fields (None): an optional field or iterable of fields for which to
+                return virtual fields. By default, all fields are considered
+
+        Returns:
+            a dictionary mapping field paths to field types
+        """
+        return self._get_virtual_field_schema(fields=fields)
+
+    def get_virtual_frame_field_schema(self, fields=None):
+        """Returns a schema dictionary describing the virtual fields of the
+        frames in the collection.
+
+        Virtual fields are fields that are implicitly populated by expressions
+        rather than being directly stored in the database.
+
+        Args:
+            fields (None): an optional field or iterable of fields for which to
+                return virtual fields. By default, all fields are considered
+
+        Returns:
+            a dictionary mapping field paths to field types, or ``None`` if the
+            collection does not contain videos
+        """
+        return self._get_virtual_field_schema(fields=fields, frames=True)
+
+    def _get_virtual_field_schema(self, fields=None, frames=False):
+        if frames:
+            schema = self.get_frame_field_schema(virtual=True, flat=True)
+        else:
+            schema = self.get_field_schema(virtual=True, flat=True)
+
+        if fields is None:
+            return schema
+
+        if etau.is_str(fields):
+            fields = {fields}
+        else:
+            fields = set(fields)
+
+        return {
+            k: v
+            for k, v in schema.items()
+            if any(k == f or k.startswith(f + ".") for f in fields)
+        }
+
+    @property
+    def has_virtual_sample_fields(self):
+        """Whether this collection has any virtual sample fields."""
+        return bool(self.get_virtual_field_schema())
+
+    @property
+    def has_virtual_frame_fields(self):
+        """Whether this collection has any virtual frame fields."""
+        return bool(self.get_virtual_frame_field_schema())
+
     def get_dynamic_field_schema(self, fields=None):
         """Returns a schema dictionary describing the dynamic fields of the
         samples in the collection.
@@ -1217,51 +1307,6 @@ class SampleCollection(object):
             field_name += _get_random_characters(1)
 
         return field_name
-
-    def has_sample_field(self, field_name):
-        """Determines whether the collection has a sample field with the given
-        name.
-
-        Args:
-            field_name: the field name
-
-        Returns:
-            True/False
-        """
-        return field_name in self.get_field_schema()
-
-    def has_frame_field(self, field_name):
-        """Determines whether the collection has a frame-level field with the
-        given name.
-
-        Args:
-            field_name: the field name
-
-        Returns:
-            True/False
-        """
-        if not self._has_frame_fields():
-            return False
-
-        return field_name in self.get_frame_field_schema()
-
-    @property
-    def has_virtual_sample_fields(self):
-        """Whether this collection has any virtual sample fields."""
-        return bool(
-            self.get_field_schema(
-                include_private=True, virtual=True, flat=True
-            )
-        )
-
-    @property
-    def has_virtual_frame_fields(self):
-        """Whether this collection has any virtual frame fields."""
-        return bool(
-            self.get_frame_field_schema(
-                include_private=True, virtual=True, flat=True
-            )
-        )
 
     def validate_fields_exist(self, fields, include_private=False):
         """Validates that the collection has field(s) with the given name(s).
