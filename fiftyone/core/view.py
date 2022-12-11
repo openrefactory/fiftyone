@@ -649,7 +649,8 @@ class DatasetView(foc.SampleCollection):
                 are ``("before", "after", "both")``. The default is ``"after"``
 
         Returns:
-             a dictionary mapping field names to field types
+            a dict mapping field names to :class:`fiftyone.core.fields.Field`
+            instances
         """
         schema = self._dataset.get_field_schema(
             include_private=include_private
@@ -701,8 +702,8 @@ class DatasetView(foc.SampleCollection):
                 are ``("before", "after", "both")``. The default is ``"after"``
 
         Returns:
-            a dictionary mapping field names to field types, or ``None`` if
-            the view does not contain videos
+            a dict mapping field names to :class:`fiftyone.core.fields.Field`
+            instances, or ``None`` if the view does not contain videos
         """
         if not self._has_frame_fields():
             return None

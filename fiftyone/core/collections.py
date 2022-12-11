@@ -1077,7 +1077,8 @@ class SampleCollection(object):
                 are ``("before", "after", "both")``. The default is ``"after"``
 
         Returns:
-             a dictionary mapping field names to field types
+            a dict mapping field names to :class:`fiftyone.core.fields.Field`
+            instances
         """
         raise NotImplementedError("Subclass must implement get_field_schema()")
 
@@ -1090,8 +1091,8 @@ class SampleCollection(object):
         flat=False,
         mode=None,
     ):
-        """Returns a schema dictionary describing the fields of the frames of
-        the samples in the collection.
+        """Returns a schema dictionary describing the fields of the frames in
+        the collection.
 
         Only applicable for collections that contain videos.
 
@@ -1115,8 +1116,8 @@ class SampleCollection(object):
                 are ``("before", "after", "both")``. The default is ``"after"``
 
         Returns:
-            a dictionary mapping field names to field types, or ``None`` if
-            the collection does not contain videos
+            a dict mapping field names to :class:`fiftyone.core.fields.Field`
+            instances, or ``None`` if the collection does not contain videos
         """
         raise NotImplementedError(
             "Subclass must implement get_frame_field_schema()"
@@ -1161,7 +1162,8 @@ class SampleCollection(object):
                 return virtual fields. By default, all fields are considered
 
         Returns:
-            a dictionary mapping field paths to field types
+            a dict mapping field paths to :class:`fiftyone.core.fields.Field`
+            instances
         """
         return self._get_virtual_field_schema(fields=fields)
 
@@ -1177,8 +1179,8 @@ class SampleCollection(object):
                 return virtual fields. By default, all fields are considered
 
         Returns:
-            a dictionary mapping field paths to field types, or ``None`` if the
-            collection does not contain videos
+            a dict mapping field paths to :class:`fiftyone.core.fields.Field`
+            instances, or ``None`` if the collection does not contain videos
         """
         return self._get_virtual_field_schema(fields=fields, frames=True)
 
@@ -1224,15 +1226,15 @@ class SampleCollection(object):
                 return dynamic fields. By default, all fields are considered
 
         Returns:
-            a dictionary mapping field paths to field types or lists of field
-            types
+            a dict mapping field paths to :class:`fiftyone.core.fields.Field`
+            instances or lists of them
         """
         schema = self.get_field_schema()
         return self._get_dynamic_field_schema(schema, "", fields=fields)
 
     def get_dynamic_frame_field_schema(self, fields=None):
         """Returns a schema dictionary describing the dynamic fields of the
-        frames of the samples in the collection.
+        frames in the collection.
 
         Dynamic fields are embedded document fields with at least one non-None
         value that have not been declared on the dataset's schema.
@@ -1242,8 +1244,9 @@ class SampleCollection(object):
                 return dynamic fields. By default, all fields are considered
 
         Returns:
-            a dictionary mapping field paths to field types or lists of field
-            types
+            a dict mapping field paths to :class:`fiftyone.core.fields.Field`
+            instances or lists of them, or ``None`` if the collection does not
+            contain videos
         """
         if not self._has_frame_fields():
             return None
