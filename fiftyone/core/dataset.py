@@ -248,7 +248,6 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
             )
 
         self._doc = doc
-
         self._sample_doc_cls = sample_doc_cls
         self._frame_doc_cls = frame_doc_cls
 
@@ -2025,7 +2024,6 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                     save_context.save(sample)
 
     def _iter_samples(self, pipeline=None):
-        make_sample = self._make_sample_fcn()
         index = 0
 
         try:
@@ -2034,7 +2032,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                 detach_frames=True,
                 detach_groups=True,
             ):
-                sample = make_sample(d)
+                sample = self._make_sample(d)
                 index += 1
                 yield sample
 
@@ -2044,13 +2042,6 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
             pipeline = [{"$skip": index}] + (pipeline or [])
             for sample in self._iter_samples(pipeline=pipeline):
                 yield sample
-
-    def _make_sample_fcn(self):
-        def make_sample(d):
-            doc = self._sample_dict_to_doc(d)
-            return fos.Sample.from_doc(doc, dataset=self)
-
-        return make_sample
 
     def iter_groups(self, progress=False, autosave=False, batch_size=None):
         """Returns an iterator over the groups in the dataset.
@@ -2124,7 +2115,6 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                         save_context.save(sample)
 
     def _iter_groups(self, pipeline=None):
-        make_sample = self._make_sample_fcn()
         index = 0
 
         group_field = self.group_field
@@ -2133,7 +2123,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         try:
             for d in self._aggregate(pipeline=pipeline, groups_only=True):
-                sample = make_sample(d)
+                sample = self._make_sample(d)
 
                 group_id = sample[group_field].id
                 if curr_id is None:
@@ -5851,25 +5841,33 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         return expanded
 
+    def _make_sample(self, d):
+        doc = self._sample_dict_to_doc(d)
+        return fos.Sample.from_doc(doc, dataset=self)
+
     def _sample_dict_to_doc(self, d):
         try:
-            return self._sample_doc_cls.from_dict(d, extended=False)
+            return self._sample_doc_cls.from_dict(d)
         except:
             # The dataset's schema may have been changed in another process;
             # let's try reloading to see if that fixes things
             self.reload()
 
-            return self._sample_doc_cls.from_dict(d, extended=False)
+            return self._sample_doc_cls.from_dict(d)
+
+    def _make_frame(self, d):
+        doc = self._frame_dict_to_doc(d)
+        return fofr.Frame.from_doc(doc, dataset=self)
 
     def _frame_dict_to_doc(self, d):
         try:
-            return self._frame_doc_cls.from_dict(d, extended=False)
+            return self._frame_doc_cls.from_dict(d)
         except:
             # The dataset's schema may have been changed in another process;
             # let's try reloading to see if that fixes things
             self.reload()
 
-            return self._frame_doc_cls.from_dict(d, extended=False)
+            return self._frame_doc_cls.from_dict(d)
 
     def _validate_samples(self, samples):
         schema = self.get_field_schema(include_private=True)
@@ -6149,27 +6147,23 @@ def _make_frame_collection_name(sample_collection_name):
     return "frames." + sample_collection_name
 
 
-def _create_sample_document_cls(
-    dataset, sample_collection_name, field_docs=None
-):
+def _create_sample_document_cls(dataset, sample_collection_name, fields=None):
     cls = type(sample_collection_name, (foo.DatasetSampleDocument,), {})
     cls._dataset = dataset
 
-    _declare_fields(dataset, cls, field_docs=field_docs)
+    _declare_fields(dataset, cls, fields=fields)
     return cls
 
 
-def _create_frame_document_cls(
-    dataset, frame_collection_name, field_docs=None
-):
+def _create_frame_document_cls(dataset, frame_collection_name, fields=None):
     cls = type(frame_collection_name, (foo.DatasetFrameDocument,), {})
     cls._dataset = dataset
 
-    _declare_fields(dataset, cls, field_docs=field_docs)
+    _declare_fields(dataset, cls, fields=fields)
     return cls
 
 
-def _declare_fields(dataset, doc_cls, field_docs=None):
+def _declare_fields(dataset, doc_cls, fields=None):
     for field_name in tuple(doc_cls._fields.keys()):
         field = doc_cls._fields[field_name]
 
@@ -6179,9 +6173,9 @@ def _declare_fields(dataset, doc_cls, field_docs=None):
         else:
             field._set_dataset(dataset, field_name)
 
-    if field_docs is not None:
-        for field_doc in field_docs:
-            doc_cls._declare_field(dataset, field_doc.name, field_doc)
+    if fields is not None:
+        for field in fields:
+            doc_cls._declare_field(dataset, field.name, field)
 
 
 def _load_clips_source_dataset(frame_collection_name):
@@ -6234,7 +6228,7 @@ def _do_load_dataset(obj, name):
     frame_collection_name = dataset_doc.frame_collection_name
 
     sample_doc_cls = _create_sample_document_cls(
-        obj, sample_collection_name, field_docs=dataset_doc.sample_fields
+        obj, sample_collection_name, fields=dataset_doc.sample_fields
     )
 
     if sample_collection_name.startswith("clips."):
@@ -6247,7 +6241,7 @@ def _do_load_dataset(obj, name):
         frame_doc_cls = _src_dataset._frame_doc_cls
     else:
         frame_doc_cls = _create_frame_document_cls(
-            obj, frame_collection_name, field_docs=dataset_doc.frame_fields
+            obj, frame_collection_name, fields=dataset_doc.frame_fields
         )
 
     return dataset_doc, sample_doc_cls, frame_doc_cls
