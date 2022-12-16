@@ -1264,6 +1264,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_sample_docs(hard=True)
 
     def _add_implied_sample_field(self, field_name, value, dynamic=False):
         if isinstance(value, fog.Group):
@@ -1275,6 +1276,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_sample_docs(hard=True)
 
     def add_dynamic_sample_fields(self, fields=None, add_mixed=False):
         """Adds all dynamic sample fields to the dataset's schema.
@@ -1309,6 +1311,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_sample_docs(hard=True)
 
     def add_frame_field(
         self,
@@ -1371,6 +1374,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_frame_docs(hard=True)
 
     def _add_implied_frame_field(self, field_name, value, dynamic=False):
         if not self._has_frame_fields():
@@ -1384,6 +1388,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_frame_docs(hard=True)
 
     def add_dynamic_frame_fields(self, fields=None, add_mixed=False):
         """Adds all dynamic frame fields to the dataset's schema.
@@ -1423,6 +1428,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_frame_docs(hard=True)
 
     def add_group_field(
         self, field_name, default=None, description=None, info=None
@@ -1444,6 +1450,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if expanded:
             self._reload()
+            self._reload_sample_docs(hard=True)
 
     def _add_group_field(self, field_name, default=None, **kwargs):
         expanded = self._sample_doc_cls.add_field(
@@ -1535,8 +1542,8 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         if fields:
             fos.Sample._purge_fields(self._sample_collection_name, fields)
 
-        fos.Sample._reload_docs(self._sample_collection_name, hard=True)
         self._reload()
+        self._reload_sample_docs(hard=True)
 
     def _rename_frame_fields(self, field_mapping, view=None):
         sample_collection = self if view is None else view
@@ -1553,8 +1560,8 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         if fields:
             fofr.Frame._purge_fields(self._frame_collection_name, fields)
 
-        fofr.Frame._reload_docs(self._frame_collection_name, hard=True)
         self._reload()
+        self._reload_frame_docs(hard=True)
 
     def clone_sample_field(self, field_name, new_field_name):
         """Clones the given sample field into a new field of the dataset.
@@ -1614,8 +1621,8 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         paths, new_paths = zip(*field_mapping.items())
         self._sample_doc_cls._clone_fields(sample_collection, paths, new_paths)
 
-        fos.Sample._reload_docs(self._sample_collection_name, hard=True)
         self._reload()
+        self._reload_sample_docs(hard=True)
 
     def _clone_frame_fields(self, field_mapping, view=None):
         sample_collection = self if view is None else view
@@ -1627,8 +1634,8 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         paths, new_paths = zip(*field_mapping.items())
         self._frame_doc_cls._clone_fields(sample_collection, paths, new_paths)
 
-        fofr.Frame._reload_docs(self._frame_collection_name, hard=True)
         self._reload()
+        self._reload_frame_docs(hard=True)
 
     def clear_sample_field(self, field_name):
         """Clears the values of the field from all samples in the dataset.
@@ -1698,7 +1705,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         field_names = _to_list(field_names)
         self._sample_doc_cls._clear_fields(sample_collection, field_names)
 
-        fos.Sample._reload_docs(self._sample_collection_name)
+        self._reload_sample_docs()
 
     def _clear_frame_fields(self, field_names, view=None):
         sample_collection = self if view is None else view
@@ -1710,7 +1717,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         field_names = _to_list(field_names)
         self._frame_doc_cls._clear_fields(sample_collection, field_names)
 
-        fofr.Frame._reload_docs(self._frame_collection_name)
+        self._reload_frame_docs()
 
     def delete_sample_field(self, field_name, error_level=0):
         """Deletes the field from all samples in the dataset.
@@ -1853,7 +1860,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
             fos.Sample._purge_fields(self._sample_collection_name, fields)
 
         if embedded_fields:
-            fos.Sample._reload_docs(self._sample_collection_name)
+            self._reload_sample_docs()
 
         self._reload()
 
@@ -1886,7 +1893,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
             fofr.Frame._purge_fields(self._frame_collection_name, fields)
 
         if embedded_fields:
-            fofr.Frame._reload_docs(self._frame_collection_name)
+            self._reload_frame_docs()
 
         self._reload()
 
@@ -2434,9 +2441,9 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
         foo.bulk_write(ops, coll, ordered=ordered)
 
         if frames:
-            fofr.Frame._reload_docs(self._frame_collection_name)
+            self._reload_frame_docs()
         else:
-            fos.Sample._reload_docs(self._sample_collection_name)
+            self._reload_sample_docs()
 
     def _merge_doc(
         self,
@@ -2871,11 +2878,11 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if sample_ops:
             foo.bulk_write(sample_ops, self._sample_collection)
-            fos.Sample._reload_docs(self._sample_collection_name)
+            self._reload_sample_docs()
 
         if frame_ops:
             foo.bulk_write(frame_ops, self._frame_collection)
-            fofr.Frame._reload_docs(self._frame_collection_name)
+            self._reload_frame_docs()
 
     def _delete_labels(self, labels, fields=None):
         if etau.is_str(fields):
@@ -2990,18 +2997,11 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         if sample_ops:
             foo.bulk_write(sample_ops, self._sample_collection)
-
-            fos.Sample._reload_docs(
-                self._sample_collection_name, sample_ids=sample_ids
-            )
+            self._reload_sample_docs(sample_ids=sample_ids)
 
         if frame_ops:
             foo.bulk_write(frame_ops, self._frame_collection)
-
-            # pylint: disable=unexpected-keyword-arg
-            fofr.Frame._reload_docs(
-                self._frame_collection_name, sample_ids=sample_ids
-            )
+            self._reload_frame_docs(sample_ids=sample_ids)
 
     @deprecated(reason="Use delete_samples() instead")
     def remove_sample(self, sample_or_id):
@@ -5973,11 +5973,21 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
 
         self._update_last_loaded_at()
 
-    def _reload_docs(self, hard=False):
-        fos.Sample._reload_docs(self._sample_collection_name, hard=hard)
+    def _reload_docs(self, sample_ids=None, hard=False):
+        self._reload_sample_docs(sample_ids=sample_ids, hard=hard)
 
         if self._has_frame_fields():
-            fofr.Frame._reload_docs(self._frame_collection_name, hard=hard)
+            self._reload_frame_docs(sample_ids=sample_ids, hard=hard)
+
+    def _reload_sample_docs(self, sample_ids=None, hard=False):
+        fos.Sample._reload_docs(
+            self._sample_collection_name, sample_ids=sample_ids, hard=hard
+        )
+
+    def _reload_frame_docs(self, sample_ids=None, hard=False):
+        fofr.Frame._reload_docs(
+            self._frame_collection_name, sample_ids=sample_ids, hard=hard
+        )
 
     def _serialize(self):
         return self._doc.to_dict(extended=True)
@@ -6580,14 +6590,10 @@ def _save_collection(sample_collection, fields=None, materialize=False):
     #
 
     if save_samples:
-        fos.Sample._reload_docs(
-            dataset._sample_collection_name, sample_ids=sample_ids
-        )
+        dataset._reload_sample_docs(sample_ids=sample_ids)
 
     if save_frames:
-        fofr.Frame._reload_docs(
-            dataset._frame_collection_name, sample_ids=sample_ids
-        )
+        dataset._reload_frame_docs(sample_ids=sample_ids)
 
 
 def _merge_dataset_doc(
@@ -7421,9 +7427,7 @@ def _merge_samples_pipeline(
             dst_dataset._frame_collection.update_many({}, cleanup_op)
 
     # Reload docs
-    fos.Sample._reload_docs(dst_dataset._sample_collection_name)
-    if contains_videos:
-        fofr.Frame._reload_docs(dst_dataset._frame_collection_name)
+    dst_dataset._reload_docs()
 
 
 def _merge_docs(
