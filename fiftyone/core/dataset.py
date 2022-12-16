@@ -5478,7 +5478,8 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
             sample_fields = None
             frame_fields = None
 
-        virtual_op = {}
+        virtual_fields = []
+        pipeline = []
 
         schema = view.get_virtual_field_schema()
 
@@ -5487,8 +5488,9 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                 k: v for k, v in schema.items() if k in set(sample_fields)
             }
 
-        for field in schema.values():
-            virtual_op.update(field._set_field_expr())
+        for path, field in schema.items():
+            virtual_fields.append(path)
+            pipeline.append(field._set_field_expr())
 
         if attach_frames:
             schema = view.get_virtual_frame_field_schema()
@@ -5500,17 +5502,13 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                     k: v for k, v in schema.items() if k in set(frame_fields)
                 }
 
-            for field in schema.values():
-                virtual_op.update(field._set_field_expr())
-
-        if virtual_op:
-            virtual_pipeline = [{"$set": virtual_op}]
-        else:
-            virtual_pipeline = []
+            for path, field in schema.items():
+                virtual_fields.append(view._FRAMES_PREFIX + path)
+                pipeline.append(field._set_field_expr())
 
         if detach_virtual not in (None, False):
             if detach_virtual == True:
-                detach_virtual = list(virtual_op.keys())
+                detach_virtual = virtual_fields
             elif etau.is_str(detach_virtual):
                 detach_virtual = [detach_virtual]
             else:
@@ -5520,7 +5518,7 @@ class Dataset(foc.SampleCollection, metaclass=DatasetSingleton):
                 # No need to detach virtual frame fields
                 detach_virtual, _ = fou.split_frame_fields(detach_virtual)
 
-        return virtual_pipeline, detach_virtual
+        return pipeline, detach_virtual
 
     def _attach_frames_pipeline(self, support=None):
         """A pipeline that attaches the frame documents for each document."""
