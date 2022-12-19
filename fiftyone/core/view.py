@@ -1053,7 +1053,7 @@ class DatasetView(foc.SampleCollection):
         """Deletes all fields that are excluded from the view from the
         underlying dataset.
 
-        If this view defines any virtual fields, they are added to the
+        If this view defines any new virtual fields, they are added to the
         underlying dataset.
 
         .. note::
@@ -1096,6 +1096,9 @@ class DatasetView(foc.SampleCollection):
 
         This method **does not** delete samples or frames from the underlying
         dataset that this view excludes.
+
+        If this view defines any new virtual fields, they are added to the
+        underlying dataset.
 
         .. note::
 
