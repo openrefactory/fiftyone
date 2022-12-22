@@ -14,14 +14,15 @@ import fiftyone.core.media as fom
 import fiftyone.core.utils as fou
 
 from .database import get_db_conn
-from .dataset import create_field, SampleFieldDocument
+from .dataset import SampleFieldDocument
 from .document import Document
 from .utils import (
-    serialize_value,
+    create_field,
+    create_implied_field,
     deserialize_value,
-    validate_field_name,
     get_field_kwargs,
-    get_implied_field_kwargs,
+    serialize_value,
+    validate_field_name,
     validate_fields_match,
 )
 
@@ -384,7 +385,7 @@ class DatasetMixin(object):
             ValueError: if a field in the schema is not compliant with an
                 existing field of the same name
         """
-        field = cls._create_implied_field(path, value, dynamic)
+        field = create_implied_field(path, value, dynamic=dynamic)
 
         return cls.merge_field_schema(
             {path: field},
@@ -418,12 +419,6 @@ class DatasetMixin(object):
             expr=expr,
             **kwargs,
         )
-
-    @classmethod
-    def _create_implied_field(cls, path, value, dynamic):
-        field_name = path.rsplit(".", 1)[-1]
-        kwargs = get_implied_field_kwargs(value, dynamic=dynamic)
-        return create_field(field_name, **kwargs)
 
     @classmethod
     def _rename_fields(cls, sample_collection, paths, new_paths):
@@ -677,14 +672,22 @@ class DatasetMixin(object):
                 and not is_frame_field
                 and path == dataset.group_field
             ):
-                fou.handle_error(
-                    ValueError(
-                        "Cannot delete group field '%s' of a grouped dataset"
-                        % path
-                    ),
-                    error_level,
-                )
-                continue
+                media_types = list(set(dataset_doc.group_media_types.values()))
+                if len(media_types) > 1:
+                    fou.handle_error(
+                        ValueError(
+                            "Cannot delete group field '%s' of a grouped "
+                            "dataset that contains multiple media types" % path
+                        ),
+                        error_level,
+                    )
+                    continue
+
+                dataset._group_slice = None
+                dataset_doc.group_field = None
+                dataset_doc.default_group_slice = None
+                dataset_doc.group_media_types = {}
+                dataset_doc.media_type = media_types[0]
 
             if field is None or not field.is_virtual:
                 del_paths.append(path)
