@@ -1904,17 +1904,16 @@ class SampleCollection(object):
 
             _sample_ids, values = _parse_values_dict(self, key_field, values)
 
+        _field = self.get_field(field_name)
+        if _field is not None and _field.is_virtual:
+            raise ValueError("Virtual fields cannot be edited")
+
         is_frame_field = self._is_frame_field(field_name)
 
         if is_frame_field:
             _frame_ids, values = _parse_frame_values_dicts(
                 self, _sample_ids, values
             )
-
-        field = self.get_field(field_name)
-
-        if field is not None and field.is_virtual:
-            raise ValueError("Virtual fields cannot be edited")
 
         if expand_schema:
             to_mongo, new_group_field = self._expand_schema_from_values(
@@ -1927,6 +1926,7 @@ class SampleCollection(object):
             to_mongo = None
             new_group_field = False
 
+        field = self.get_field(field_name)
         _field_name, _, list_fields, _, id_to_str = self._parse_field_name(
             field_name, omit_terminal_lists=True, allow_missing=_allow_missing
         )
