@@ -8,6 +8,7 @@ Dataset sample fields.
 from copy import deepcopy
 from datetime import date, datetime
 import numbers
+import re
 
 from bson import ObjectId, SON
 from bson.binary import Binary
@@ -784,6 +785,16 @@ class StringField(mongoengine.fields.StringField, Field):
         self._description = description
         self._info = info
         self._expr = expr
+
+
+class ColorField(StringField):
+    """A string field that holds a hex color string like '#FF6D04'."""
+
+    def validate(self, value):
+        try:
+            fou.validate_hex_color(value)
+        except ValueError as e:
+            self.error(str(e))
 
 
 class ListField(mongoengine.fields.ListField, Field):
@@ -1672,6 +1683,17 @@ class EmbeddedDocumentListField(
             etau.get_class_name(self),
             etau.get_class_name(self.document_type),
         )
+
+
+class ReferenceField(mongoengine.fields.ReferenceField, Field):
+    """A reference field.
+
+    Args:
+        document_type: the :class:`fiftyone.core.odm.Document` type stored in
+            this field
+    """
+
+    pass
 
 
 _ARRAY_FIELDS = (VectorField, ArrayField)
