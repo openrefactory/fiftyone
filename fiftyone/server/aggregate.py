@@ -117,11 +117,10 @@ class AggregateQuery:
     @gql.field
     async def aggregate(
         self,
-        *,
         dataset_name: str,
         view: t.Optional[BSONArray],
         aggregations: t.List[Aggregate],
-        view_name: t.Optional[str],
+        view_name: t.Optional[str] = None,
     ) -> t.List[
         gql.union(
             "AggregationResponses",
