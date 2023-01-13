@@ -100,7 +100,7 @@ const Wrapper = ({
   const initializeSettings = () => {
     setExcluded && setExcluded(false);
     setOnlyMatch && setOnlyMatch(true);
-    setIsMatching && setIsMatching(!Boolean(nestedField));
+    setIsMatching && setIsMatching(!nestedField);
   };
 
   return (
