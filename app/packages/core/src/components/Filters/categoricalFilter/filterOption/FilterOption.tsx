@@ -96,6 +96,7 @@ const Text = styled.div`
 
 const FilterOptionContainer = styled.div`
   position: relative;
+  margin: 0 -0.5rem 0 -0.5rem;
 `;
 
 const FilterOption: React.FC<Props> = ({
@@ -293,6 +294,7 @@ function Popout({ children, style = {}, modal }: PopoutProps) {
         ...style,
         zIndex: "200000",
         right: modal ? 0 : "unset",
+        margin: "0 -0.5rem 0 -0.5rem",
       }}
     >
       {children}
