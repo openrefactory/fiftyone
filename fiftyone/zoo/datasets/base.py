@@ -2241,10 +2241,11 @@ class KITTIMultiviewDataset(FiftyOneDataset):
 
     def _patch_if_necessary(self, dataset_dir, split):
         try:
+            # This data is in FiftyOneDataset format
             split_dir = os.path.join(dataset_dir, split)
             metadata_path = os.path.join(split_dir, "metadata.json")
             metadata = etas.read_json(metadata_path)
-            config = metadata["info"]["app_config"]["plugins"]["3d"]
+            config = metadata["app_config"]["plugins"]["3d"]
             is_legacy = "itemRotation" in config["overlay"]
         except:
             is_legacy = False
@@ -2695,7 +2696,7 @@ class QuickstartGroupsDataset(FiftyOneDataset):
         516.3 MB
     """
 
-    _GDRIVE_ID = "1df8JucJwjHTkl3MgOJdH477vcv4McNCa"
+    _GDRIVE_ID = "1mLfmb0Bj9L7SaDwcgpKVetvKEGt-b7Lb"
     _ARCHIVE_NAME = "quickstart-groups.zip"
     _DIR_IN_ARCHIVE = "quickstart-groups"
 
@@ -2735,6 +2736,7 @@ class QuickstartGroupsDataset(FiftyOneDataset):
 
     def _patch_if_necessary(self, dataset_dir, _):
         try:
+            # This data is in LegacyFiftyOneDataset format
             metadata_path = os.path.join(dataset_dir, "metadata.json")
             metadata = etas.read_json(metadata_path)
             config = metadata["info"]["app_config"]["plugins"]["3d"]
