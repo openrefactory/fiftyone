@@ -71,7 +71,7 @@ const Item = React.memo(
       return (
         <StyledPanelItem>
           {tooltip ? (
-            <Tooltip text={tooltip!} placement="right-start">
+            <Tooltip text={tooltip} placement="right-start">
               {children}
             </Tooltip>
           ) : (
