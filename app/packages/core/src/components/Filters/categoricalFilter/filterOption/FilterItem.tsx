@@ -26,7 +26,7 @@ const Item = React.memo(
   React.forwardRef(
     (
       { icon, value, tooltip, color, highlightedBGColor, onClick }: ItemProp,
-      ref
+        ref: ForwardedRef<HTMLDivElement>
     ) => {
       const StyledPanelItem = styled.div`
         cursor: pointer;
