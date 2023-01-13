@@ -119,7 +119,7 @@ const FilterOption: React.FC<Props> = ({
   const theme = useTheme();
   const highlightedBGColor = Color(color).alpha(0.25).string();
 
-  const popoutRef = React.useRef();
+  const popoutRef = React.useRef<HTMLDivElement>();
   const ref = React.useRef();
 
   useOutsideClick(popoutRef, () => {
