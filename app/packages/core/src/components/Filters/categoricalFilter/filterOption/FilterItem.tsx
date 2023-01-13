@@ -56,7 +56,7 @@ const Item = React.memo(
         }
       };
 
-      const children: DetailedReactHTMLElement<any, HTMLElement> = (
+      const children = (
         <div
           style={{ display: "flex", flexDirection: "row" }}
           ref={ref}
